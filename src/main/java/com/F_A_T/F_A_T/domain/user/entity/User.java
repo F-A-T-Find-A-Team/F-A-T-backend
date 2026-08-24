@@ -12,7 +12,6 @@ import java.util.List;
 @Entity
 @Table(name = "user")
 @Getter
-@Setter
 @NoArgsConstructor
 public class User {
 
@@ -34,13 +33,11 @@ public class User {
     private String user_major;
 
 
-    //이줄 아래부터 다시 공부해볼것
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_interest_stack",
             joinColumns = @JoinColumn(name = "user_id")
     )
-
 
     @Column(name = "interest_stack")
     private List<String> interestStacks = new ArrayList<>();
