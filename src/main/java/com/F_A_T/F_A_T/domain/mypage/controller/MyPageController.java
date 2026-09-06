@@ -2,7 +2,7 @@ package com.F_A_T.F_A_T.domain.mypage.controller;
 
 import com.F_A_T.F_A_T.domain.mypage.dto.request.MyPageUpdateRequest;
 import com.F_A_T.F_A_T.domain.mypage.dto.response.MyPageResponse;
-import com.F_A_T.F_A_T.domain.mypage.MyPageService.MyPageService;
+import com.F_A_T.F_A_T.domain.mypage.service.MyPageService;
 import com.F_A_T.F_A_T.domain.user.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
