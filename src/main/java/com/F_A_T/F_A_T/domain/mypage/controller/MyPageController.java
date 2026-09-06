@@ -1,5 +1,6 @@
 package com.F_A_T.F_A_T.domain.mypage.controller;
 
+import com.F_A_T.F_A_T.domain.mypage.dto.request.GithubConnectRequest;
 import com.F_A_T.F_A_T.domain.mypage.dto.request.MyPageUpdateRequest;
 import com.F_A_T.F_A_T.domain.mypage.dto.response.MyPageResponse;
 import com.F_A_T.F_A_T.domain.mypage.service.MyPageService;
@@ -30,6 +31,15 @@ public class MyPageController {
             @RequestBody @Valid MyPageUpdateRequest request) {
 
         myPageService.updateMyPage(userDetails.getUser(), request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/github")
+    public ResponseEntity<Void> connectGithub(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid GithubConnectRequest request) {
+
+        myPageService.connectGithub(userDetails.getUser(), request);
         return ResponseEntity.ok().build();
     }
 }

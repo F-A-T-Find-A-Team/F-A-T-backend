@@ -11,7 +11,8 @@ public record MyPageResponse(
         String userGender,
         String userMajor,
         List<String> interestStacks,
-        Integer userStudentNumber
+        Integer userStudentNumber,
+        String githubUsername
 ) {
     public static MyPageResponse from(User user) {
         return new MyPageResponse(
@@ -21,7 +22,8 @@ public record MyPageResponse(
                 user.getUser_gender(),
                 user.getUser_major(),
                 user.getInterest_stacks(),
-                user.getUser_student_number()
+                user.getUser_student_number(),
+                user.getGithub_username()
         );
     }
 }

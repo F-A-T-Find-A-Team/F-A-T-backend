@@ -47,6 +47,9 @@ public class User {
     @Column(name = "user_name", nullable = false)
     private String user_name;
 
+    @Column(name = "github_username")
+    private String github_username;
+
     @Builder
     public User(String user_password, String user_email, String user_gender,
                 String user_major, List<String> interest_stacks,

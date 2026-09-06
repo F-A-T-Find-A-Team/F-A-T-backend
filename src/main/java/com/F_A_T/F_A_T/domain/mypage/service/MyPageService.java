@@ -1,5 +1,6 @@
 package com.F_A_T.F_A_T.domain.mypage.service;
 
+import com.F_A_T.F_A_T.domain.mypage.dto.request.GithubConnectRequest;
 import com.F_A_T.F_A_T.domain.mypage.dto.request.MyPageUpdateRequest;
 import com.F_A_T.F_A_T.domain.mypage.dto.response.MyPageResponse;
 import com.F_A_T.F_A_T.domain.user.entity.User;
@@ -24,5 +25,10 @@ public class MyPageService {
         if (request.interestStacks() != null) {
             user.setInterest_stacks(request.interestStacks());
         }
+    }
+
+    @Transactional
+    public void connectGithub(User user, GithubConnectRequest request) {
+        user.setGithub_username(request.githubUsername());
     }
 }
