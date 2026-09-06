@@ -12,6 +12,7 @@ import java.util.List;
 @Entity
 @Table(name = "user")
 @Getter
+@Setter
 @NoArgsConstructor
 public class User {
 
@@ -32,30 +33,30 @@ public class User {
     @Column(name = "user_major", nullable = false)
     private String user_major;
 
-
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_interest_stack",
             joinColumns = @JoinColumn(name = "user_id")
     )
-
     @Column(name = "interest_stack")
-    private List<String> interestStacks = new ArrayList<>();
+    private List<String> interest_stacks = new ArrayList<>();
 
     @Column(name = "user_student_number", nullable = false)
-    private Integer userStudentNumber;
+    private Integer user_student_number;
 
     @Column(name = "user_name", nullable = false)
-    private String userName;
+    private String user_name;
 
     @Builder
-    public User(String userPassword, String userEmail, String userGender, String userMajor, List<String> interestStacks, Integer userStudentNumber, String userName) {
-        this.user_password = userPassword;
-        this.user_email = userEmail;
-        this.user_gender = userGender;
-        this.user_major = userMajor;
-        this.interestStacks = interestStacks != null ? interestStacks : new ArrayList<>();
-        this.userStudentNumber = userStudentNumber;
-        this.userName = userName;
+    public User(String user_password, String user_email, String user_gender,
+                String user_major, List<String> interest_stacks,
+                Integer user_student_number, String user_name) {
+        this.user_password = user_password;
+        this.user_email = user_email;
+        this.user_gender = user_gender;
+        this.user_major = user_major;
+        this.interest_stacks = interest_stacks != null ? interest_stacks : new ArrayList<>();
+        this.user_student_number = user_student_number;
+        this.user_name = user_name;
     }
 }
