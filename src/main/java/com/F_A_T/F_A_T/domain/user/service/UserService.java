@@ -22,13 +22,13 @@ public class UserService {
         }
 
         User user = User.builder()
-                .userEmail(request.userEmail())
-                .userPassword(passwordEncoder.encode(request.userPassword())) // 암호화 저장
-                .userGender(request.userGender())
-                .userMajor(request.userMajor())
-                .interestStacks(request.interestStacks())
-                .userStudentNumber(request.userStudentNumber())
-                .userName(request.userName())
+                .user_email(request.userEmail())
+                .user_password(passwordEncoder.encode(request.userPassword())) // 암호화 저장
+                .user_gender(request.userGender())
+                .user_major(request.userMajor())
+                .interest_stacks(request.interestStacks())
+                .user_student_number(request.userStudentNumber())
+                .user_name(request.userName())
                 .build();
 
         return userRepository.save(user).getUser_id();

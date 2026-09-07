@@ -48,7 +48,7 @@ public class FeedbackService {
 
     @Transactional(readOnly = true)
     public List<FeedbackResponse> getFeedbacks(Long projectId) {
-        return feedbackRepository.findByProject_Project_id(projectId).stream()
+        return feedbackRepository.findByProjectId(projectId).stream()
                 .map(FeedbackResponse::from)
                 .collect(Collectors.toList());
     }

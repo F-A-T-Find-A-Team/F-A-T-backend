@@ -31,7 +31,7 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public List<ChatMessageResponse> getMessages(Long chatRoomId) {
-        return chatMessageRepository.findByChat_room_Chat_room_idOrderBySent_atAsc(chatRoomId).stream()
+        return chatMessageRepository.findByChatRoomId(chatRoomId).stream()
                 .map(ChatMessageResponse::from)
                 .collect(Collectors.toList());
     }
