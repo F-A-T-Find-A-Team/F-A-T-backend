@@ -11,5 +11,6 @@ public record ProjectCreateRequest(
         @NotBlank String projectDescription,
         List<String> requiredMajors,
         List<String> requiredStacks,
-        @NotNull LocalDate projectDeadline
+        @NotNull LocalDate projectDeadline,
+        @NotNull Integer recruitLimit
 ) {}

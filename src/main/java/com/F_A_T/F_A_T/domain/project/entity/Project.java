@@ -2,6 +2,7 @@ package com.F_A_T.F_A_T.domain.project.entity;
 
 import com.F_A_T.F_A_T.domain.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,20 +55,31 @@ public class Project {
     @Column(name = "project_status", nullable = false)
     private ProjectStatus project_status;
 
+    @Column(name = "view_count", nullable = false)
+    private Integer view_count = 0;
+
+    @Column(name = "recruit_limit", nullable = false)
+    private Integer recruit_limit;
+
     @Builder
     public Project(User pm, String project_title, String project_description,
                    List<String> required_majors, List<String> required_stacks,
-                   LocalDate project_deadline) {
+                   LocalDate project_deadline, Integer recruit_limit) {
         this.pm = pm;
         this.project_title = project_title;
         this.project_description = project_description;
         this.required_majors = required_majors != null ? required_majors : new ArrayList<>();
         this.required_stacks = required_stacks != null ? required_stacks : new ArrayList<>();
         this.project_deadline = project_deadline;
-        this.project_status = ProjectStatus.IDEA; // 생성 시 기본값: 1단계(아이디어)
+        this.recruit_limit = recruit_limit;
+        this.project_status = ProjectStatus.IDEA;
+        this.view_count = 0;
     }
 
-    public void changeStatus(ProjectStatus newStatus) {
-        this.project_status = newStatus;
+    public void increaseViewCount() {
+        this.view_count++;
+    }
+
+    public void changeStatus(@NotNull ProjectStatus status) {
     }
 }

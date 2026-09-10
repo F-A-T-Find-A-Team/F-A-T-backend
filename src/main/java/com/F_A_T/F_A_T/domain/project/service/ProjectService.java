@@ -1,7 +1,10 @@
 package com.F_A_T.F_A_T.domain.project.service;
 
+import com.F_A_T.F_A_T.domain.application.entity.ApplicationStatus;
+import com.F_A_T.F_A_T.domain.application.repository.ProjectApplicationRepository;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectCreateRequest;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectStatusUpdateRequest;
+import com.F_A_T.F_A_T.domain.project.dto.response.ProjectMemberResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectResponse;
 import com.F_A_T.F_A_T.domain.project.entity.Project;
 import com.F_A_T.F_A_T.domain.project.repository.ProjectRepository;
@@ -9,12 +12,14 @@ import com.F_A_T.F_A_T.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectApplicationRepository applicationRepository;
 
     @Transactional
     public Long createProject(User pm, ProjectCreateRequest request) {
@@ -25,16 +30,22 @@ public class ProjectService {
                 .required_majors(request.requiredMajors())
                 .required_stacks(request.requiredStacks())
                 .project_deadline(request.projectDeadline())
+                .recruit_limit(request.recruitLimit())
                 .build();
 
         return projectRepository.save(project).getProject_id();
     }
 
+    @Transactional
     public ProjectResponse getProject(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
 
-        return ProjectResponse.from(project);
+        project.increaseViewCount();
+
+        int currentMemberCount = applicationRepository.countByProjectAndStatus(project, ApplicationStatus.ACCEPTED);
+
+        return ProjectResponse.from(project, currentMemberCount);
     }
 
     @Transactional
@@ -43,5 +54,15 @@ public class ProjectService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
 
         project.changeStatus(request.status());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectMemberResponse> getMembers(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+
+        return applicationRepository.findAcceptedApplicants(project, ApplicationStatus.ACCEPTED).stream()
+                .map(ProjectMemberResponse::from)
+                .toList();
     }
 }

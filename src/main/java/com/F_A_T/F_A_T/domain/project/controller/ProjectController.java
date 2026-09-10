@@ -2,6 +2,7 @@ package com.F_A_T.F_A_T.domain.project.controller;
 
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectCreateRequest;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectStatusUpdateRequest;
+import com.F_A_T.F_A_T.domain.project.dto.response.ProjectMemberResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectResponse;
 import com.F_A_T.F_A_T.domain.project.service.ProjectService;
 import com.F_A_T.F_A_T.domain.user.security.CustomUserDetails;
@@ -11,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,5 +43,10 @@ public class ProjectController {
 
         projectService.updateStatus(projectId, request);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<ProjectMemberResponse>> getMembers(@PathVariable Long projectId) {
+        return ResponseEntity.ok(projectService.getMembers(projectId));
     }
 }

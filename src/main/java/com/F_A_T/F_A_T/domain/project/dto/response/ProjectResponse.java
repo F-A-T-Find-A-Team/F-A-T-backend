@@ -14,9 +14,12 @@ public record ProjectResponse(
         List<String> requiredMajors,
         List<String> requiredStacks,
         LocalDate projectDeadline,
-        ProjectStatus projectStatus
+        ProjectStatus projectStatus,
+        Integer viewCount,
+        Integer recruitLimit,
+        Integer currentMemberCount
 ) {
-    public static ProjectResponse from(Project project) {
+    public static ProjectResponse from(Project project, int currentMemberCount) {
         return new ProjectResponse(
                 project.getProject_id(),
                 project.getPm().getUser_id(),
@@ -25,7 +28,10 @@ public record ProjectResponse(
                 project.getRequired_majors(),
                 project.getRequired_stacks(),
                 project.getProject_deadline(),
-                project.getProject_status()
+                project.getProject_status(),
+                project.getView_count(),
+                project.getRecruit_limit(),
+                currentMemberCount
         );
     }
 }
