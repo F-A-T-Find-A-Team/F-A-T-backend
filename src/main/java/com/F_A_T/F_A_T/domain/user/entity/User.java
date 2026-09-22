@@ -47,6 +47,12 @@ public class User {
     @Column(name = "user_name", nullable = false)
     private String user_name;
 
+    @Column(name = "user_bio", length = 100)
+    private String user_bio;
+
+    @Column(name = "club_name")
+    private String club_name;
+
     @Column(name = "github_username")
     private String github_username;
 

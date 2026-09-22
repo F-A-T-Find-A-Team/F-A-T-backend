@@ -1,6 +1,6 @@
 package com.F_A_T.F_A_T.domain.feedback.controller;
 
-import com.F_A_T.F_A_T.domain.feedback.dto.request.FeedbackCreateRequest;
+import com.F_A_T.F_A_T.domain.feedback.dto.request.FeedbackBulkCreateRequest;
 import com.F_A_T.F_A_T.domain.feedback.dto.response.FeedbackResponse;
 import com.F_A_T.F_A_T.domain.feedback.service.FeedbackService;
 import com.F_A_T.F_A_T.domain.user.security.CustomUserDetails;
@@ -21,13 +21,13 @@ public class FeedbackController {
     private final FeedbackService feedbackService;
 
     @PostMapping
-    public ResponseEntity<Long> createFeedback(
+    public ResponseEntity<List<Long>> createFeedbacks(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long projectId,
-            @RequestBody @Valid FeedbackCreateRequest request) {
+            @RequestBody @Valid FeedbackBulkCreateRequest request) {
 
-        Long feedbackId = feedbackService.createFeedback(userDetails.getUser(), projectId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(feedbackId);
+        List<Long> feedbackIds = feedbackService.createFeedbacks(userDetails.getUser(), projectId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(feedbackIds);
     }
 
     @GetMapping

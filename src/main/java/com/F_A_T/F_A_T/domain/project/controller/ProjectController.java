@@ -2,6 +2,7 @@ package com.F_A_T.F_A_T.domain.project.controller;
 
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectCreateRequest;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectStatusUpdateRequest;
+import com.F_A_T.F_A_T.domain.project.dto.response.ProjectListResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectMemberResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectResponse;
 import com.F_A_T.F_A_T.domain.project.service.ProjectService;
@@ -48,5 +49,10 @@ public class ProjectController {
     @GetMapping("/{projectId}/members")
     public ResponseEntity<List<ProjectMemberResponse>> getMembers(@PathVariable Long projectId) {
         return ResponseEntity.ok(projectService.getMembers(projectId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProjectListResponse>> getProjectList() {
+        return ResponseEntity.ok(projectService.getProjectList());
     }
 }

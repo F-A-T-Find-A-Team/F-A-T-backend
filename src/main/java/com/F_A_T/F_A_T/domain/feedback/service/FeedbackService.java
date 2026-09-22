@@ -1,6 +1,6 @@
 package com.F_A_T.F_A_T.domain.feedback.service;
 
-import com.F_A_T.F_A_T.domain.feedback.dto.request.FeedbackCreateRequest;
+import com.F_A_T.F_A_T.domain.feedback.dto.request.FeedbackBulkCreateRequest;
 import com.F_A_T.F_A_T.domain.feedback.dto.response.FeedbackResponse;
 import com.F_A_T.F_A_T.domain.feedback.entity.Feedback;
 import com.F_A_T.F_A_T.domain.feedback.repository.FeedbackRepository;
@@ -25,7 +25,7 @@ public class FeedbackService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Long createFeedback(User writer, Long projectId, FeedbackCreateRequest request) {
+    public List<Long> createFeedbacks(User writer, Long projectId, FeedbackBulkCreateRequest request) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
 
@@ -33,17 +33,22 @@ public class FeedbackService {
             throw new IllegalArgumentException("완료된 프로젝트만 피드백을 작성할 수 있습니다.");
         }
 
-        User target = userRepository.findById(request.targetUserId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+        return request.feedbacks().stream()
+                .map(item -> {
+                    User target = userRepository.findById(item.targetUserId())
+                            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
-        Feedback feedback = Feedback.builder()
-                .project(project)
-                .writer(writer)
-                .target(target)
-                .feedback_content(request.content())
-                .build();
+                    Feedback feedback = Feedback.builder()
+                            .project(project)
+                            .writer(writer)
+                            .target(target)
+                            .rating(item.rating())
+                            .feedback_content(item.content())
+                            .build();
 
-        return feedbackRepository.save(feedback).getFeedback_id();
+                    return feedbackRepository.save(feedback).getFeedback_id();
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)

@@ -4,6 +4,7 @@ import com.F_A_T.F_A_T.domain.application.entity.ApplicationStatus;
 import com.F_A_T.F_A_T.domain.application.repository.ProjectApplicationRepository;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectCreateRequest;
 import com.F_A_T.F_A_T.domain.project.dto.request.ProjectStatusUpdateRequest;
+import com.F_A_T.F_A_T.domain.project.dto.response.ProjectListResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectMemberResponse;
 import com.F_A_T.F_A_T.domain.project.dto.response.ProjectResponse;
 import com.F_A_T.F_A_T.domain.project.entity.Project;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,5 +66,15 @@ public class ProjectService {
         return applicationRepository.findAcceptedApplicants(project, ApplicationStatus.ACCEPTED).stream()
                 .map(ProjectMemberResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectListResponse> getProjectList() {
+        return projectRepository.findAll().stream()
+                .map(project -> {
+                    int currentMemberCount = applicationRepository.countByProjectAndStatus(project, ApplicationStatus.ACCEPTED);
+                    return ProjectListResponse.from(project, currentMemberCount);
+                })
+                .collect(Collectors.toList());
     }
 }

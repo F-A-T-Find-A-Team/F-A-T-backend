@@ -25,6 +25,12 @@ public class MyPageService {
         if (request.interestStacks() != null) {
             user.setInterest_stacks(request.interestStacks());
         }
+        if (request.bio() != null) {
+            user.setUser_bio(request.bio());
+        }
+        if (request.clubName() != null) {
+            user.setClub_name(request.clubName());
+        }
     }
 
     @Transactional

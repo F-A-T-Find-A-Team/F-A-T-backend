@@ -30,14 +30,18 @@ public class Feedback {
     @JoinColumn(name = "target_id", nullable = false)
     private User target;
 
-    @Column(name = "feedback_content", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "rating", nullable = false)
+    private Integer rating;
+
+    @Column(name = "feedback_content", columnDefinition = "TEXT")
     private String feedback_content;
 
     @Builder
-    public Feedback(Project project, User writer, User target, String feedback_content) {
+    public Feedback(Project project, User writer, User target, String feedback_content, Integer rating) {
         this.project = project;
         this.writer = writer;
         this.target = target;
+        this.rating = rating;
         this.feedback_content = feedback_content;
     }
 }
