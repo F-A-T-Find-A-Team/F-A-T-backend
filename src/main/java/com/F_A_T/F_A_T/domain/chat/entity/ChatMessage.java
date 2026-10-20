@@ -2,14 +2,13 @@ package com.F_A_T.F_A_T.domain.chat.entity;
 
 import com.F_A_T.F_A_T.domain.user.entity.User;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "chat_message")
+@Table(name = "chat_messages")
 @Getter
 @NoArgsConstructor
 public class ChatMessage {

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "project_application")
+@Table(name = "applications", uniqueConstraints = @UniqueConstraint(name = "uk_application_project_applicant", columnNames = {"project_id", "applicant_id"}))
 @Getter
 @NoArgsConstructor
 public class ProjectApplication {
@@ -27,6 +27,9 @@ public class ProjectApplication {
     @JoinColumn(name = "applicant_id", nullable = false)
     private User applicant;
 
+    @Column(name = "application_position")
+    private String application_position;
+
     @Column(name = "application_message")
     private String application_message;
 
@@ -35,10 +38,11 @@ public class ProjectApplication {
     private ApplicationStatus application_status;
 
     @Builder
-    public ProjectApplication(Project project, User applicant, String application_message) {
+    public ProjectApplication(Project project, User applicant, String application_message, String application_position) {
         this.project = project;
         this.applicant = applicant;
         this.application_message = application_message;
+        this.application_position = application_position;
         this.application_status = ApplicationStatus.PENDING;
     }
 

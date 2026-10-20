@@ -1,16 +1,15 @@
 package com.F_A_T.F_A_T.domain.user.entity;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,7 +37,7 @@ public class User {
             name = "user_interest_stack",
             joinColumns = @JoinColumn(name = "user_id")
     )
-    @Column(name = "interest_stack")
+    @Column(name = "interest_stack", nullable = false)
     private List<String> interest_stacks = new ArrayList<>();
 
     @Column(name = "user_student_number", nullable = false)
@@ -47,14 +46,14 @@ public class User {
     @Column(name = "user_name", nullable = false)
     private String user_name;
 
+    @Column(name = "avatar_url", length = 512)
+    private String avatar_url;
+
     @Column(name = "user_bio", length = 100)
     private String user_bio;
 
     @Column(name = "club_name")
     private String club_name;
-
-    @Column(name = "github_username")
-    private String github_username;
 
     @Builder
     public User(String user_password, String user_email, String user_gender,

@@ -8,13 +8,12 @@ import com.F_A_T.F_A_T.domain.project.dto.response.ProjectResponse;
 import com.F_A_T.F_A_T.domain.project.service.ProjectService;
 import com.F_A_T.F_A_T.domain.user.security.CustomUserDetails;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,10 +38,11 @@ public class ProjectController {
 
     @PatchMapping("/{projectId}/status")
     public ResponseEntity<Void> updateStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long projectId,
             @RequestBody @Valid ProjectStatusUpdateRequest request) {
 
-        projectService.updateStatus(projectId, request);
+        projectService.updateStatus(userDetails.getUser(), projectId, request);
         return ResponseEntity.ok().build();
     }
 

@@ -8,6 +8,7 @@ public record ApplicationResponse(
         Long projectId,
         Long applicantId,
         String message,
+        String position,
         ApplicationStatus status
 ) {
     public static ApplicationResponse from(ProjectApplication application) {
@@ -16,6 +17,7 @@ public record ApplicationResponse(
                 application.getProject().getProject_id(),
                 application.getApplicant().getUser_id(),
                 application.getApplication_message(),
+                application.getApplication_position(),
                 application.getApplication_status()
         );
     }

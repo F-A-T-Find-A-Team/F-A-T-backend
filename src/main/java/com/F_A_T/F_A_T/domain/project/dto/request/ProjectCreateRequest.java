@@ -1,8 +1,8 @@
 package com.F_A_T.F_A_T.domain.project.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,5 +12,5 @@ public record ProjectCreateRequest(
         List<String> requiredMajors,
         List<String> requiredStacks,
         @NotNull LocalDate projectDeadline,
-        @NotNull Integer recruitLimit
+        @NotNull @Min(1) Integer recruitLimit
 ) {}

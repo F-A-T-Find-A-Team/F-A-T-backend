@@ -3,16 +3,15 @@ package com.F_A_T.F_A_T.domain.project.entity;
 import com.F_A_T.F_A_T.domain.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "project")
+@Table(name = "projects")
 @Getter
 @NoArgsConstructor
 public class Project {
@@ -37,7 +36,7 @@ public class Project {
             name = "project_required_major",
             joinColumns = @JoinColumn(name = "project_id")
     )
-    @Column(name = "required_major")
+    @Column(name = "required_major", nullable = false)
     private List<String> required_majors = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
@@ -45,7 +44,7 @@ public class Project {
             name = "project_required_stack",
             joinColumns = @JoinColumn(name = "project_id")
     )
-    @Column(name = "required_stack")
+    @Column(name = "required_stack", nullable = false)
     private List<String> required_stacks = new ArrayList<>();
 
     @Column(name = "project_deadline", nullable = false)
@@ -54,6 +53,9 @@ public class Project {
     @Enumerated(EnumType.STRING)
     @Column(name = "project_status", nullable = false)
     private ProjectStatus project_status;
+
+    @Column(name = "recruiting_open", nullable = false)
+    private boolean recruiting_open = true;
 
     @Column(name = "view_count", nullable = false)
     private Integer view_count = 0;
@@ -81,5 +83,7 @@ public class Project {
     }
 
     public void changeStatus(@NotNull ProjectStatus status) {
+        this.project_status = java.util.Objects.requireNonNull(status);
+        if (status == ProjectStatus.COMPLETED) this.recruiting_open = false;
     }
 }

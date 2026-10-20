@@ -20,8 +20,8 @@ public record ProjectListResponse(
         return new ProjectListResponse(
                 project.getProject_id(),
                 project.getProject_title(),
-                project.getRequired_majors(),
-                project.getRequired_stacks(),
+                List.copyOf(project.getRequired_majors()),
+                List.copyOf(project.getRequired_stacks()),
                 project.getProject_deadline(),
                 project.getProject_status(),
                 project.getRecruit_limit(),

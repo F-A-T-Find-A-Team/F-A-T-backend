@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "feedback")
+@Table(name = "feedback", uniqueConstraints = @UniqueConstraint(name = "uk_feedback_project_writer_target", columnNames = {"project_id", "writer_id", "target_id"}))
 @Getter
 @NoArgsConstructor
 public class Feedback {
