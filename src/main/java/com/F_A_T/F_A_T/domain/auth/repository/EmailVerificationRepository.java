@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification, Long> {
+    Optional<EmailVerification> findFirstByEmailOrderByIdDesc(String email);
+    Optional<EmailVerification> findBySignupTokenHash(String signupTokenHash);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from EmailVerification v where v.id = :id")
     Optional<EmailVerification> findForUpdate(@Param("id") Long id);

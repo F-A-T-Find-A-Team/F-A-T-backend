@@ -28,7 +28,7 @@ public class ChatParticipant {
 
     public void markRead(ChatMessage message) {
         if (!room.getChat_room_id().equals(message.getChat_room().getChat_room_id())) {
-            throw new IllegalArgumentException("다른 채팅방의 메시지입니다.");
+            throw new com.F_A_T.F_A_T.global.exception.ApiException(com.F_A_T.F_A_T.global.exception.ErrorCode.INVALID_MESSAGE_CURSOR);
         }
         if (lastReadMessage == null || lastReadMessage.getChat_message_id() < message.getChat_message_id()) {
             lastReadMessage = message;

@@ -1,5 +1,7 @@
 name: MySQL schema and integration tests
 on:
+  push:
+    branches: [dev]
   pull_request:
     branches: [dev]
   workflow_dispatch:

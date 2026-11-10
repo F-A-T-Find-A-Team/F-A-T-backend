@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.time.Instant;
 
 @Entity
 @Table(name = "applications", uniqueConstraints = @UniqueConstraint(name = "uk_application_project_applicant", columnNames = {"project_id", "applicant_id"}))
@@ -36,6 +36,9 @@ public class ProjectApplication {
     @Enumerated(EnumType.STRING)
     @Column(name = "application_status", nullable = false)
     private ApplicationStatus application_status;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
 
     @Builder
     public ProjectApplication(Project project, User applicant, String application_message, String application_position) {

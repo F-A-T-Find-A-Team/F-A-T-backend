@@ -1,4 +1,4 @@
-package com.F_A_T.F_A_T.domain.user.security;
+package com.F_A_T.F_A_T.global.security;
 
 import com.F_A_T.F_A_T.domain.user.entity.User;
 import com.F_A_T.F_A_T.domain.user.repository.UserRepository;

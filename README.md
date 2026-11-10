@@ -1,33 +1,98 @@
 # F.A.T. Backend
 
-프로젝트 모집·지원·팀 활동을 위한 Spring Boot / JPA / MySQL 백엔드.
+프로젝트 모집·지원·팀 활동을 위한 Spring Boot / JPA / MySQL 백엔드다. 첨부된 노션 API 명세서의 요청·응답·에러 정의를 기준으로 GitHub 관련 기능 4개를 제외한 **30개 API**를 구현한다. 작업 기준 브랜치는 `dev`이며, 최초 데이터 모델은 `1-feat-login-signup@043c352`의 Entity와 주요 PK·컬럼을 유지해 확장했다.
 
-## 설계 기준과 범위
+## 실행 환경과 설정
 
-기준 코드는 `1-feat-login-signup`의 `043c352bb93b02ea58602effd467aef76864a3c1`, PR 대상은 `dev`다. 기존 서비스·DTO에서 사용하는 Entity 이름, PK 값, 주요 컬럼 이름을 유지했다.
+JDK 17, 저장소의 Gradle Wrapper 9.5.1, MySQL 8.4가 필요하다. MySQL 통합 테스트에는 Docker가 필요하다.
 
-기능 기준은 제공된 노션 `F.A.T. API 명세서` 내보내기(페이지 `fc2a25fde89d442280b79de3e88a0fad`)의 API 목록이다. 원본 34개 중 GitHub OAuth 및 연동 4개를 제외한 30개 기능을 대상으로 데이터 모델을 설계했다. 첨부본에는 개별 API의 상세 요청·응답 필드, 학교 이메일 도메인, 토큰 만료 정책, 이미지 저장소, 추천 알고리즘이 없다. 이를 임의의 확정 명세로 취급하지 않는다.
+```bash
+cp .env.example .env
+# .env의 DB 비밀번호, 두 개의 독립적인 서버 비밀키, SMTP 설정을 채운다.
+# .env는 셸에서 읽을 수 있는 KEY=value 형식으로 작성하고 필요한 값은 따옴표로 감싼다.
+set -a
+. ./.env
+set +a
+docker compose up -d --wait
+bash gradlew bootRun
+```
 
-이 변경은 스키마·Entity·Repository 및 기존 서비스의 데이터 일관성을 다룬다. 새로운 이메일 발송/JWT 인증, 파일 업로드, 검색·추천 API 전체 구현은 포함하지 않는다. 기존 `/signup`, `/login`, `/mypage`, `/projects/{id}/status` 경로를 모두 노션 경로로 전환하지도 않는다. 인증 메일·토큰 테이블이 존재한다고 해당 인증 API가 구현된 것은 아니다.
+Compose는 `127.0.0.1:3307`의 개발 전용 `fat_dev` DB와 `fat_mysql_dev` 볼륨을 사용한다. 기존 MySQL을 쓴다면 Compose 대신 개발 전용 DB의 연결 환경변수를 설정한다. DB·볼륨 초기화는 필요하지 않다. 기존 볼륨의 비밀번호는 환경변수만 바꿔도 변경되지 않으므로 MySQL의 계정 변경 절차를 사용한다.
 
-## 기존 구조 분석
+| 환경변수 | 용도 |
+| --- | --- |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | 애플리케이션의 MySQL 연결. 실제 비밀번호를 Git에 저장하지 않는다 |
+| `MYSQL_ROOT_PASSWORD` | 로컬 Compose DB 초기 계정용. 애플리케이션 계정과 구분한다 |
+| `SPRING_PROFILES_ACTIVE` | 개발에서는 `dev`. 기본/prod는 자동 Flyway 실행을 끈다 |
+| `JWT_SECRET` | HS256 JWT 서명키. UTF-8 기준 32바이트 이상, 기본값 없음 |
+| `EMAIL_CODE_SECRET` | 6자리 인증 코드 HMAC 키. UTF-8 기준 32바이트 이상, JWT 키와 별도 관리 |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM` | 실제 인증 메일 전송 설정. 포트 기본값 587 |
+| `SMTP_AUTH`, `SMTP_STARTTLS` | 기본값 모두 `true`. STARTTLS는 기본적으로 필수 |
+| `AUTH_SECURE_COOKIE` | 기본값 `true`. 로컬 HTTP 개발에서만 `false`로 설정 |
+| `AVATAR_STORAGE_PATH` | 아바타 저장 디렉터리. 기본값 `/workspace/shared/fat-avatars` |
 
-| 기존 모델 | 관계와 문제 | 변경 |
-| --- | --- | --- |
-| `user` / User | 이메일 UNIQUE, 관심 스택 ElementCollection; DB 비밀번호 하드코딩 | `users`; 기존 계정·비밀번호 해시 보존, 환경변수 사용, 아바타 URL 추가 |
-| `project` / Project | PM N:1 User, 전공·스택 컬렉션; 상태 변경 메서드가 빈 구현 | `projects`; 주요 필드 유지, 모집 여부 분리, 상태 변경 저장 |
-| `project_application` | Project·신청자 N:1, 지원 상태; 중복 방지는 서비스 조회뿐 | `applications`; 프로젝트/지원자 UNIQUE, 포지션, 취소 이력 |
-| 지원서 ACCEPTED | 수락된 지원서로만 팀원을 추정, PM 누락 | `project_members`; PM 및 수락자 명시적 등록 |
-| `chat_room` | Project와 1:1 | `chat_rooms`; 프로젝트별 팀방 1개 + 신청자별 PM 커피챗 |
-| `chat_message` | 방·발신자 FK만 있고 참여자 개념 없음 | `chat_messages`, `chat_participants`; 발신 참여와 읽음 위치 보장 |
-| `feedback` | 프로젝트·작성자·대상 FK, 중복·평점 범위 제약 없음 | 기존 PK·데이터 유지; 중복·자기평가·평점·팀원 FK 제약 |
-| `inquiry` / InquiryMessage | Inquiry 관계만 구현; InquiryMessage는 필드 선언이 없어 컴파일 불가 | Inquiry 보존, 독립 `inquiry_messages` 매핑 완성; 커피챗은 새 chat 모델 사용 |
+키·비밀번호·실제 `.env`, DB 파일·백업 및 업로드 파일은 Git에 넣지 않는다. 테스트 키는 테스트 전용 리소스에만 있으며 배포 JAR에 포함하지 않는다. SMTP 설정이 없거나 전송이 실패하면 인증 코드를 성공한 것처럼 반환하지 않고 `MAIL_DELIVERY_FAILED`를 반환한다. 외부 SMTP 서버의 실제 전달 여부는 배포 환경의 설정으로 별도 검증해야 한다.
 
-기존 `UserRepository`의 JPQL `:email`과 메서드 인자명이 불일치해 명시적 `@Param`으로 수정했다. 프로젝트 생성/지원 수락/팀원 목록/채팅 접근도 새로운 연결 테이블을 사용한다. 마이페이지는 세션의 분리된 Entity를 직접 수정하는 대신 트랜잭션 안에서 재조회한다.
+클라우드 작업은 이미 격리되어 있으므로 기존 `/workspace/F-A-T-backend` 체크아웃을 사용한다. 별도 Git worktree는 필요하지 않다.
 
-기존 설정에 포함됐던 DB 비밀번호는 제거했다. Git 이력에 남아 있으므로 해당 자격증명이 실제로 사용됐다면 소유자가 폐기·교체해야 한다. 이 변경은 이력을 강제 재작성하지 않는다.
+## 공통 요청·응답과 인증
 
-## 테이블 관계
+인증 API를 제외한 API는 `Authorization: Bearer {accessToken}`이 필요하다. 성공 응답은 `{"success":true,"data":...}`, 오류 응답은 `{"success":false,"error":{"code":"...","message":"..."}}`다. `204 No Content`는 본문이 없다. SQL·스택 트레이스·내부 예외 메시지는 클라이언트에 반환하지 않는다.
+
+`CustomUserDetails`, JWT 필터·서명·인증 오류 응답은 `global/security`에 둔다. Controller는 요청 바인딩·응답 생성만 맡고 로그인·검증·갱신 등 업무 처리는 `AuthService`가 담당한다. Service는 `ApiException(ErrorCode)`를 사용하며 `GlobalExceptionHandler`가 명세의 상태 코드와 메시지로 변환한다. 필터 단계의 인증/권한 오류도 같은 오류 형식을 사용한다.
+
+신규 가입 흐름은 이메일 코드 발송 → 검증 → 일회성 가입 토큰으로 회원가입 → 로그인이다. 학교 이메일은 `@dsm.hs.kr`로 제한한다. 인증 코드는 5분, 재발송 간격은 60초, 실패 시도는 5회로 제한한다. 인증 코드는 서버에서 생성하고 HMAC으로 저장하며 응답·로그에 원문을 노출하지 않는다. 가입 토큰은 10분 동안 유효하고 이메일에 연결되며 한 번만 사용할 수 있다. 비밀번호는 BCrypt로 저장한다.
+
+로그인 시 유효기간 3600초인 JWT와 14일 refresh 세션을 발급한다. refresh 토큰 원문 대신 digest만 DB에 저장한다. 쿠키는 `HttpOnly`, `Secure`(기본값), `SameSite=Strict`, `Path=/auth`다. 갱신 요청은 refresh 쿠키로 새 JWT와 회전된 쿠키를 받고 이전 refresh 토큰은 사용할 수 없다. 로그아웃은 현재 세션을 폐기하고 쿠키를 지우며 해당 세션의 JWT도 이후 요청에서 거절한다. 운영에서는 HTTPS를 사용하고 브라우저의 쿠키·CORS 조건에 맞게 프런트엔드와 API를 배치한다. CORS 허용 출처의 기본값은 `http://localhost:3000`이며 `app.cors.origins`로 설정한다.
+
+기존 계정의 이메일 소유권은 마이그레이션만으로 확인할 수 없으므로 `emailVerified=false`를 유지한다. 기존 사용자는 `/auth/email/send`에 `purpose:"VERIFY_ACCOUNT"`, 자신의 이메일과 현재 비밀번호를 보내고 받은 코드를 `/auth/email/verify`로 검증한다. 이 확장 흐름은 `{"verified":true}`를 반환하고 기존 계정을 인증 완료로 바꾸며 가입 토큰을 새로 발급하지 않는다. 검증 전 로그인은 `EMAIL_NOT_VERIFIED`로 거절된다. 기존 비밀번호 해시는 변경하지 않는다.
+
+## API 목록
+
+명세의 기본 경로를 아래에 기재했다. 일부 프로젝트·지원 경로의 `/api/v1` 별칭은 명세 예시와의 호환을 위한 것이며, 아래 경로를 공통 기준으로 사용한다. 예전 세션 인증 경로(`/signup`, `/login`, `/mypage`, `/projects/{id}/status`) 대신 새 계약을 사용한다.
+
+| # | Method | 경로 | 기능 |
+| --- | --- | --- | --- |
+| 1 | POST | `/auth/email/send` | 인증코드 발송·재전송 제한 |
+| 2 | POST | `/auth/email/verify` | 코드 검증·일회성 가입 토큰 |
+| 3 | POST | `/auth/signup` | 이메일 인증 후 회원가입 |
+| 4 | POST | `/auth/login` | JWT·refresh 쿠키 발급 |
+| 5 | POST | `/auth/refresh` | JWT 갱신·refresh 토큰 회전 |
+| 6 | POST | `/auth/logout` | 세션 폐기·쿠키 삭제, 204 |
+| 7 | GET | `/users/me` | 내 프로필·프로젝트/평가 통계 |
+| 8 | PATCH | `/users/me` | 닉네임·소개·성별·전공·스택 수정 |
+| 9 | POST | `/users/me/avatar` | multipart 이미지 업로드 |
+| 10 | GET | `/users/{userId}` | 이메일·학번·본명을 제외한 공개 프로필 |
+| 11 | GET | `/users/me/projects` | 참여 프로젝트 이력·단계 필터·페이지 |
+| 12 | GET | `/projects` | 검색어·전공·스택·모집 상태 필터·페이지 |
+| 13 | GET | `/projects/recommended` | 사용자 전공·스택 기반 추천 |
+| 14 | GET | `/projects/{projectId}` | 프로젝트 상세·팀원·지원 가능 여부 |
+| 15 | POST | `/projects` | 프로젝트·PM 팀원·팀 채팅 참여 등록 |
+| 16 | PATCH | `/projects/{projectId}` | PM의 프로젝트 내용·모집 조건 수정 |
+| 17 | PATCH | `/projects/{projectId}/stage` | PM의 진행 단계 변경 |
+| 18 | GET | `/projects/{projectId}/members` | 팀원 카드·PM/MEMBER 역할 |
+| 19 | POST | `/projects/{projectId}/applications` | 포지션·사유를 담은 지원 |
+| 20 | GET | `/projects/{projectId}/applications` | PM 지원자 목록·상태 필터·페이지 |
+| 21 | GET | `/users/me/applications` | 본인 지원 내역·페이지 |
+| 22 | PATCH | `/applications/{applicationId}` | PM 승인·거절, 수락 시 팀원/팀방 등록 |
+| 23 | DELETE | `/applications/{applicationId}` | 본인의 대기 중 지원 취소, 204 |
+| 24 | GET | `/chat-rooms` | 내 방·최근 메시지·읽지 않은 수 |
+| 25 | POST | `/chat-rooms/direct` | PM 커피챗 생성 또는 기존 방 재사용 |
+| 26 | GET | `/chat-rooms/{roomId}/messages` | 커서 기반 이전 메시지·읽음 처리 |
+| 27 | POST | `/chat-rooms/{roomId}/messages` | 텍스트 전송·clientMessageId 중복 방지 |
+| 28 | POST | `/projects/{projectId}/feedback` | 완료 프로젝트 PM의 팀원 평가 |
+| 29 | GET | `/users/me/feedback` | 받은 평가·평균 별점·페이지 |
+| 30 | GET | `/projects/{projectId}/feedback-status` | PM의 평가 완료/미완료 팀원 상태 |
+
+프로젝트 검색의 쿼리 이름은 `query`, `major`, `techStack`, `recruitmentStatus`, `page`, `size`다. 모집 상태는 `OPEN`/`CLOSED`이며 PM 포함 정원, 마감일, 완료 여부를 반영한다. 추천은 모집 중이며 내가 팀원이 아닌 프로젝트를 전공 일치(2점)·스택 일치(1점)로 정렬하는 `RULE_BASED` 방식이다. 외부 AI 서비스는 호출하지 않는다.
+
+진행 단계는 `IDEA → IN_PROGRESS → COMPLETED` 순서로만 변경한다. 정원은 PM을 포함한 1~12명이다. 프로젝트 행 잠금과 트랜잭션으로 동시 지원 수락의 정원·중복 문제를 막는다. 이미 결정한 지원은 다시 결정할 수 없다. 지원 취소는 행 삭제 대신 `CANCELLED` 이력으로 남기며, 현재 동일 프로젝트 재지원은 허용하지 않는다. 팀원 탈퇴·PM 교체·수락 취소는 포함하지 않는다.
+
+채팅은 프로젝트 팀방 `TEAM`과 PM/요청자 1:1 방 `DIRECT`로 구분한다. 참여자만 내역 조회·전송이 가능하며, 커서는 `message_{id}` 형식의 `before`와 `size`로 사용한다. 읽음 위치는 같은 방의 메시지에 대해서만 전진한다. 메시지 `clientMessageId`가 같은 재전송은 409 `DUPLICATE_MESSAGE`다. 피드백은 완료 프로젝트 PM만 본인을 제외한 팀원에게 작성할 수 있고, 배치 전체를 검증한 뒤 저장해 중간 일부만 저장되지 않게 한다.
+
+프로필 사진은 PNG/JPEG의 MIME과 실제 이미지 내용을 검사하고 5MiB·2천만 픽셀로 제한한다. 최대 변 1024로 줄여 새 UUID 파일명의 PNG로 재인코딩한다. 원래 파일명·메타데이터를 저장하지 않는다. 반환된 `/avatars/{uuid}.png`는 공개 프로필 이미지로 읽을 수 있고 `nosniff` 헤더를 보낸다. 파일은 DB가 아닌 `AVATAR_STORAGE_PATH`에 저장하므로 운영에서 영속 볼륨·백업이 필요하다. 가입 요청의 `avatarFileId`는 현재 `null`이어야 하며 가입·로그인 후 인증된 업로드 API를 사용한다.
+
+## 데이터 모델과 변경 이유
 
 ```mermaid
 erDiagram
@@ -37,120 +102,67 @@ erDiagram
     projects ||--|{ project_members : has
     users ||--o{ project_members : joins
     projects ||--o{ chat_rooms : has
-    users o|--o{ chat_rooms : direct_requester
     chat_rooms ||--o{ chat_participants : has
     users ||--o{ chat_participants : participates
     chat_participants ||--o{ chat_messages : sends
-    chat_rooms ||--o{ chat_messages : contains
     chat_messages o|--o{ chat_participants : last_read
-    projects ||--o{ feedback : receives
     project_members ||--o{ feedback : writer_and_target
+    projects ||--o{ feedback : receives
     users ||--o{ refresh_tokens : authenticates
+    users ||--o{ user_majors : majors
     users ||--o{ user_interest_stack : interested_in
     projects ||--o{ project_required_major : requires
     projects ||--o{ project_required_stack : requires
-    projects ||--o{ inquiry : legacy_inquiry
-    users ||--o{ inquiry : asks
-    inquiry ||--o{ inquiry_messages : contains
-    users ||--o{ inquiry_messages : sends
 ```
 
-`email_verifications`는 가입 전 이메일을 다루므로 users FK가 없다. `project_members`의 PM/MEMBER 역할은 `projects.pm_id`와 비교해 도출한다. 중복 역할 컬럼을 두어 서로 어긋나게 만들지 않는다. PM이 팀원으로 등록되는 것은 서비스와 마이그레이션이 보장하며, FK만으로 모든 교차 테이블 규칙을 보장한다고 가정하지 않는다.
+기존의 `user`, `project`, `project_application`, `chat_room`, `chat_message`를 복수형 테이블로 옮기면서 PK·본문·비밀번호 해시·지원 상태를 보존했다. 수락된 지원서로만 팀원을 추정하던 구조를 `project_members`로 분리해 PM도 포함하고, `chat_participants`로 메시지 발신 자격과 읽음 위치를 표현한다. PM 역할은 `projects.pm_id`를 기준으로 도출해 별도 역할 컬럼의 불일치를 피한다.
 
-## 키와 제약조건
-
-모든 식별자는 signed BIGINT AUTO_INCREMENT이며, 아래 연결 컬렉션만 복합 PK다. 기존 `*_id` 값은 변경하지 않는다. 모든 FK는 삭제 전파 없이 RESTRICT/NO ACTION을 사용한다. 사용자·프로젝트·팀원을 삭제해 메시지나 평가가 자동 소실되지 않는다.
-
-| 테이블 | PK | FK / UNIQUE | NOT NULL 및 주요 규칙 |
-| --- | --- | --- | --- |
-| users | user_id | UNIQUE user_email | 비밀번호 해시·이메일·성별·전공·학번·이름 필수. bio/club/avatar/기존 github_username nullable |
-| projects | project_id | pm_id → users | 제목·소개·마감일·단계·모집여부·정원·조회수 필수. 정원 > 0, 조회수 ≥ 0 |
-| applications | application_id | project_id → projects, applicant_id → users; UNIQUE(project_id, applicant_id) | 상태 필수, 메시지/포지션은 레거시 보존을 위해 DB에서 nullable. 신규 요청은 둘 다 필수 |
-| project_members | project_member_id | project_id → projects, user_id → users; UNIQUE(project_id,user_id) | 두 FK 필수 |
-| chat_rooms | chat_room_id | project_id → projects, requester_id → users; UNIQUE(team_project_id), UNIQUE(project_id,requester_id) | 프로젝트·유형 필수. TEAM은 requester NULL, DIRECT는 NOT NULL |
-| chat_participants | chat_participant_id | room → chat_rooms, user → users; UNIQUE(room,user); (room,last_read_message_id) → chat_messages(room,message) | 방·사용자 필수. 읽음 위치는 NULL 허용 |
-| chat_messages | chat_message_id | room → chat_rooms, sender → users; (room,sender) → chat_participants(room,user); UNIQUE(room,message) | 방·발신자·내용·발신시각 필수 |
-| feedback | feedback_id | project → projects, writer/target → users 및 project_members(project,user); UNIQUE(project,writer,target) | 프로젝트·작성자·대상·평점 필수. 평점 1–5, 작성자 ≠ 대상. 내용 nullable |
-| user_interest_stack | (user_id,interest_stack) | user_id → users | 모두 필수, 동일 사용자 중복 스택 금지 |
-| project_required_major | (project_id,required_major) | project_id → projects | 모두 필수, 동일 프로젝트 중복 전공 금지 |
-| project_required_stack | (project_id,required_stack) | project_id → projects | 모두 필수, 동일 프로젝트 중복 스택 금지 |
-| email_verifications | verification_id | UNIQUE signup_token_hash | 이메일·코드 digest·코드 만료·시도횟수 필수. 시도 0–5, 인증/토큰/소비시각 nullable; 가입 토큰 hash와 만료는 함께 존재 |
-| refresh_tokens | refresh_token_id | user_id → users; UNIQUE token_hash | 사용자·digest·생성·만료 필수, 폐기시각 nullable, 만료 > 생성 |
-| inquiry | inquiry_id | project_id → projects, applicant_id → users | 두 FK 필수, 기존 관계 보존 |
-| inquiry_messages | inquiry_message_id | inquiry_id → inquiry, sender_id → users | 문의·발신자·내용·시각 필수 |
-
-채팅방의 `team_project_id`는 TEAM일 때만 project_id가 되는 MySQL 생성 컬럼이다. MySQL UNIQUE에서 NULL을 여러 개 허용하는 특성을 이용해 프로젝트당 팀방은 1개, 1:1 방은 요청자별로 여러 개 허용한다. JPA에는 생성 컬럼을 쓰기 필드로 매핑하지 않는다. 기존 Hibernate UNIQUE 인덱스 이름은 설치마다 달라 V3에서 메타데이터로 정확한 단일 project_id UNIQUE 인덱스만 찾아 제거한다.
-
-컬렉션 테이블은 기존 이름·문자열 값을 유지한다. 전공/스택의 공식 사전이 제공되지 않아 임의의 코드 사전으로 바꾸거나 값들을 통합하지 않는다. 사용자가 보내는 리스트는 중복 없는 값이어야 한다. 학번과 닉네임은 명세에 UNIQUE 요구가 없어 임의 제약을 추가하지 않았다. `user_name`을 기존 표시 이름으로 유지한다.
-
-## API 기능과 저장 모델
-
-| 명세 기능 | 모델 / 처리 |
+| 테이블 | 핵심 키·제약 |
 | --- | --- |
-| 이메일 인증·가입 | email_verifications: 만료·횟수·가입 토큰 소비 상태, users: 계정. consumeSignupToken은 미소비·미만료 토큰에 대해 원자적으로 1회 갱신 |
-| 로그인·갱신·로그아웃 | refresh_tokens: 만료·폐기, digest UNIQUE. revokeActive 반환값 1만 토큰 회전/로그아웃의 성공으로 사용 가능 |
-| 프로필·사진·공개 프로필 | users의 기존 정보·avatar_url, 관심 스택 컬렉션. 이미지 바이너리는 DB에 저장하지 않음 |
-| 내 프로젝트 이력 | project_members → projects 조회 |
-| 검색·추천·상세·수정 | projects 모집 여부·단계·정원·전공/스택·관심 스택을 활용. 추천 점수 저장은 요구하지 않음 |
-| 팀원 카드 | project_members와 users, projects.pm_id로 PM/MEMBER 도출 |
-| 지원·PM 목록·내 지원 | applications의 포지션·사유·상태, 프로젝트별/신청자별 조회 |
-| 지원 수락 | 프로젝트 행 잠금과 READ_COMMITTED 트랜잭션으로 정원 확인 후 팀원·팀 채팅 참여자를 함께 등록 |
-| 지원 취소 | 본인의 PENDING만 CANCELLED로 전이, DELETE HTTP 요청이 DB 행 삭제를 뜻하지 않음. 취소 후 재지원은 UNIQUE 때문에 현재 불허 |
-| 팀방·커피챗 | TEAM / DIRECT 구분, PM과 요청자만 DIRECT 참여. 방 생성은 프로젝트 행 잠금과 UNIQUE로 중복 방지 |
-| 최근 메시지·읽지 않은 수 | 메시지 ID 순의 최근 메시지, 참여자별 last_read_message_id. 본인 메시지는 unread 제외. 현재 전체 내역 조회 시 읽음 위치 전진 |
-| 피드백·평균 평점·완료 상태 | COMPLETED 프로젝트 PM만 타 팀원 평가. 받은 평가/평균/평가 대상 ID Repository 조회. 동일 작성자·대상 평가는 중복 불가 |
+| `users` | `user_id` PK, 이메일 UNIQUE·필수, 신규 닉네임 UNIQUE(레거시 NULL 허용), 인증 여부 NOT NULL. 기존 표시 이름·학번·단일 전공 필드 보존 |
+| `projects` | `project_id` PK, `pm_id` FK·필수, 제목·소개·마감·단계·정원·조회수 필수, 정원 양수·조회수 음수 금지 |
+| `applications` | `application_id` PK, 프로젝트·신청자 FK·필수, UNIQUE(project,applicant). 상태 필수, 기존 포지션/사유의 NULL은 보존 |
+| `project_members` | `project_member_id` PK, 프로젝트·사용자 FK·필수, UNIQUE(project,user) |
+| `chat_rooms` | `chat_room_id` PK, 프로젝트 FK·필수. 생성 컬럼 UNIQUE로 프로젝트별 TEAM 1개, UNIQUE(project,requester)로 DIRECT 요청자별 1개 |
+| `chat_participants` | `chat_participant_id` PK, 방·사용자 FK·필수, UNIQUE(room,user), 읽음 메시지는 동일 방의 메시지로 복합 FK |
+| `chat_messages` | `chat_message_id` PK, 방·발신자·내용·시각 필수, (room,sender) → 참여자 복합 FK. UNIQUE(room,sender,client_message_id), 레거시 client ID는 NULL 허용 |
+| `feedback` | `feedback_id` PK, 프로젝트·작성자·대상 FK 및 팀원 복합 FK, UNIQUE(project,writer,target), 평점 1~5·자기평가 금지 |
+| 전공·스택 컬렉션 | `user_majors`, `user_interest_stack`, `project_required_major`, `project_required_stack`: 소유자 FK와 값의 복합 PK, 모두 NOT NULL |
+| `email_verifications` | PK, 코드 HMAC·이메일·만료·시도 수·purpose 필수, 시도 0~5, 가입 토큰 digest UNIQUE. 가입 전 이메일도 다뤄 users FK 없음 |
+| `email_delivery_limits` | 이메일 PK, 최근 발송시각 필수. 잠금으로 동시 재전송 제한 |
+| `refresh_tokens` | PK, 사용자 FK·필수, 토큰 digest UNIQUE·필수, 생성/만료 필수, 폐기시각 nullable |
 
-`recruit_limit`는 PM을 포함한 총원으로 해석한다. 명세 목록에 포함/제외 기준이 없어 문서화한 설계 결정이다. 기존 과원 프로젝트를 자동 축소하지 않는다. 수락 취소·팀원 탈퇴·PM 변경은 이력/권한 정책이 필요하므로 추가하지 않았다. ACCEPTED에서 다른 상태로 전환해 팀원만 고아 상태로 남기는 동작은 거절한다.
+기존 `inquiry`와 `inquiry_messages`, 제외된 GitHub 연동의 `users.github_username` 값은 보존한다. 원래 미완성이었던 InquiryMessage 매핑은 복구했으며, 새 커피챗은 chat 모델을 사용한다. FK는 삭제 전파를 사용하지 않아 사용자·프로젝트를 삭제할 때 과거 메시지·평가가 자동 소실되지 않는다. FK만으로 모든 서비스 권한·단계 전이를 보장하는 것은 아니다.
 
-6자리 인증 코드는 공간이 작으므로 단순 SHA-256만 사용하면 안 된다. 메일 인증 구현 시 별도 환경변수의 서버 비밀키를 사용하는 HMAC 등과 요청 속도 제한을 적용해야 한다. 현재 모델은 64자 digest만 저장하며 raw 코드·refresh/signup 토큰을 저장하지 않는다. refresh JWT 서명키·메일 자격증명은 실제 기능을 구현할 때 환경변수/비밀 저장소로 주입한다. 학교 이메일 도메인과 만료 시간은 확정 정보가 없어 하드코딩하지 않았다.
+## Flyway와 기존 데이터 보존
 
-## 로컬 개발
+`dev` 프로필에서 Flyway를 실행하며 Hibernate는 `validate`만 수행한다. 기본/prod는 자동 Flyway 실행을 끈다. `clean-disabled=true`, `baseline-on-migrate=false`를 유지한다. 운영 적용은 별도 승인된 배포 절차로만 수행한다.
 
-필수: JDK 17, 저장소의 Gradle Wrapper 9.5.1, MySQL 8.4. 통합 테스트는 Docker가 필요하며 H2로 대체하지 않는다.
+| 버전 | 내용 |
+| --- | --- |
+| V1 | **빈 DB용** 레거시 참조 스키마 |
+| V2 | 기존 데이터 사전검사, 테이블 rename, PK 보존, PM/ACCEPTED 지원자의 팀원·팀방 참여 백필, FK/UNIQUE/CHECK |
+| V3 | 인증 상태 모델, 아바타·지원 포지션·모집 여부, TEAM/DIRECT·읽음 위치. 원래 알 수 없는 값은 NULL 유지 |
+| V4 | 닉네임·본명·문자열 학번·다중 전공·인증 여부. 기존 이름/학번/전공을 보존하고 인증은 임의 완료하지 않음 |
+| V5 | 프로젝트/지원/평가 시각, 메시지 클라이언트 ID, 인증 목적·메일 재전송 제한. 과거 시각은 알 수 없어 백필 시각이며 원래 생성시각이라고 간주하지 않음 |
 
-```bash
-cp .env.example .env
-# .env에 로컬 전용 DB_PASSWORD와 MYSQL_ROOT_PASSWORD를 채운다.
-docker compose up -d --wait
-# .env는 제시된 KEY=value 형식만 사용한다.
-set -a
-. ./.env
-set +a
-bash gradlew bootRun
-```
+자동 DB 삭제·초기화·중복 제거·`FOREIGN_KEY_CHECKS=0`을 사용하지 않는다. V2는 중복 지원/평가, 자기평가·잘못된 평점, NULL/중복 컬렉션, 잘못된 정원·조회수, 팀원이 아닌 과거 발신자/평가 참여자가 있으면 rename 전에 중단한다. 문제 기록을 삭제하거나 자동으로 팀원 자격을 부여하지 않는다. 초기 unread에는 과거 읽음 여부를 알 수 없는 보존 메시지가 포함될 수 있다.
 
-Compose는 `127.0.0.1:3307`, 별도 `fat_dev` DB와 `fat_mysql_dev` 볼륨을 사용한다. 기존 DB에 연결하지 않으며 데이터를 유지한다. DB 초기화나 볼륨 삭제 명령은 실행하지 않는다. 비밀번호 변경은 기존 볼륨 사용자 비밀번호를 자동 변경하지 않으므로 MySQL의 정식 계정 변경 절차가 필요하다.
+기존 DB 적용 시 다음 순서를 따른다.
 
-기존 로컬 MySQL을 쓰면 Compose 없이 `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SPRING_PROFILES_ACTIVE=dev`를 환경에 설정한다. 반드시 개발 전용 스키마를 가리킨다. `dev` 프로필에서만 Flyway가 자동 적용되고 Hibernate는 `validate`만 수행한다. 기본/prod는 Flyway가 꺼져 있고 스키마 검증만 한다. 설정만으로 운영 배포를 승인했다고 간주하지 않는다. 운영 DB에는 별도의 변경 승인과 배포 절차 없이 마이그레이션을 실행하지 않는다.
-
-클라우드 작업은 이미 격리되어 있으므로 `/workspace/F-A-T-backend`의 기존 체크아웃을 사용한다. 별도 Git worktree를 만들 필요가 없다.
-
-## 마이그레이션과 데이터 손실 검토
-
-- **V1**: 빈 DB용 기존 스키마 참조본. 이미 테이블이 있는 DB에 자동으로 baseline하지 않는다.
-- **V2**: 데이터 사전검사 → 테이블 이름 변경 → UNIQUE/CHECK 및 연결 테이블 추가 → PM/ACCEPTED 지원자를 팀원·팀방 참여자로 백필. PK와 원래 문자열·내용·시각은 유지한다.
-- **V3**: 노션 기능에 필요한 인증 상태·아바타·포지션·모집여부·DIRECT 방·읽음 위치를 추가한다. 기존 방은 TEAM, 완료 프로젝트는 모집 마감으로 변환한다. 기존 포지션·아바타·읽음 위치는 알 수 없으므로 NULL을 유지한다. 그 결과 초기 unread에는 보존한 예전 메시지가 포함될 수 있다.
-
-자동 데이터베이스 삭제, 테이블 초기화, Flyway clean, 중복 행 제거, `FOREIGN_KEY_CHECKS=0`, 운영 접속은 사용하지 않는다. Github 필드의 Entity/API는 제거했지만 기존 `users.github_username` 컬럼·값은 의도적으로 남긴다. 기존 `Inquiry_message`/`inquiry_message` 같은 사용자 생성 테이블도 건드리지 않는다. 이를 새 모델에 옮기거나 삭제하려면 별도 검토가 필요하다.
-
-V2는 다음 데이터가 있으면 **rename 전에 실패**한다: 동일 프로젝트 중복 지원, 중복 평가, 자기평가/범위 밖 평점, NULL/중복 스택·전공, 음수 조회수/잘못된 정원, 팀원이 아닌 과거 메시지 발신자·평가 참여자. 자동으로 팀원 자격을 부여하거나 기록을 삭제하지 않는다. 문제 데이터의 의미를 소유자와 확인한 후 별도 승인된 정정 SQL을 작성한다. 초기 스키마 구조가 V1과 다르거나 FK가 없고 고아 데이터가 존재하면 별도의 사전 진단/보완이 필요하다. 임의 운영 스키마의 호환성을 보장하지 않는다.
-
-기존 DB에 도입하는 절차:
-
-1. 운영 변경은 별도 승인 후 정비 시간에 진행한다. 쓰기 요청을 중단하고 복구 가능한 백업 및 복원 검증을 먼저 한다.
-2. 운영 원본에 바로 적용하지 않고, 백업으로 만든 격리 복제 DB에서 `SHOW CREATE TABLE`, 인덱스, collation, 행 수, FK·고아 데이터, V2 사전검사 조건을 점검한다. V1은 불완전했던 InquiryMessage 테이블을 가정하지 않는다. 기존 DB에 inquiry 테이블이 없으면 baseline 전에 승인된 보완 절차가 필요하다.
-3. 기존 테이블이 V1에 해당하고 Flyway 이력이 **없는** DB만 명시적으로 version 1 baseline한다. Flyway CLI의 연결 자격증명은 환경으로 주입한다. 기존 Flyway 이력이 있으면 함부로 baseline하지 않는다.
+1. 운영은 별도 승인과 정비 시간을 확보하고 쓰기를 중단한다. 백업을 만들고 실제 복원이 가능한지 검증한다.
+2. 원본 대신 격리한 복제 DB에서 `SHOW CREATE TABLE`, 행 수·PK·인덱스·collation·고아 FK·사전검사 조건을 확인한다. V1과 다른 실DB 스키마는 별도의 보완 검토가 필요하다.
+3. **Flyway 이력이 없고 정확히 V1 구조인 기존 DB만** 명시적으로 version 1 baseline한다. 이미 버전 관리 중인 DB에는 다시 baseline하지 않는다.
 
    ```bash
    FLYWAY_URL="$DB_URL" FLYWAY_USER="$DB_USERNAME" FLYWAY_PASSWORD="$DB_PASSWORD" \
      flyway -baselineVersion=1 baseline
    ```
 
-4. 복제 DB에서 dev 프로필 애플리케이션을 시작해 V2/V3를 실행하고 `ddl-auto=validate`를 통과시킨다. 마이그레이션 전후 행 수·PK·지원 상태·내용·팀원 수·읽기 기능을 대조한다. 운영의 경우 승인된 마이그레이션 배포 작업에서 동일 SQL 파일을 사용한다.
-5. MySQL DDL은 여러 문장을 하나의 트랜잭션으로 되돌릴 수 없다. 디스크 부족, 권한/스키마 차이, 중간 DDL 실패 시 일부 변경이 남을 수 있다. 무조건 재실행하거나 Flyway `repair`로 오류를 숨기지 않는다. 백업으로 복구하거나 실제 적용 상태를 조사해 승인된 forward-fix를 수행한다. V2 사전검사 실패는 원본 테이블을 유지하지만 검사 프로시저/Flyway 실패 이력은 남을 수 있다.
-6. 운영 적용 후 검증하고 애플리케이션을 전환한다. 이 작업에서 실제 운영 DB에 접속하거나 baseline/migrate하지 않는다.
+4. 복제 DB에서 V2~V5를 적용해 schema validate와 기능 검증을 수행하고, 전후 행 수·PK·본문·상태·관계를 대조한다. 운영에는 검토한 동일 SQL을 승인된 배포 작업으로 적용한다.
+5. MySQL DDL은 여러 문장을 원자적으로 rollback하지 못한다. 권한·디스크·구조 차이로 중간 실패하면 일부 변경이 남는다. 무조건 재실행하거나 `repair`로 오류를 숨기지 말고 백업 복원 또는 실제 상태를 확인한 승인된 forward-fix를 사용한다.
 
-DB의 FK·VARCHAR 비교는 기존 collation 영향을 받는다. 대소문자·악센트 구분이나 이메일 정규화 정책을 자동 변경하지 않는다. 인덱스가 추가되므로 대형 테이블의 잠금 시간·디스크 용량·백업 시간을 복제 DB에서 측정해야 한다.
+기존 Git 이력에 포함됐던 DB 비밀번호가 실제 자격증명이었다면 소유자가 폐기·교체해야 한다. 이력을 강제 재작성하지 않는다. 저장된 설정·코드만으로 운영 적용이 승인된 것은 아니다.
 
 ## 테스트
 
@@ -158,4 +170,6 @@ DB의 FK·VARCHAR 비교는 기존 collation 영향을 받는다. 대소문자·
 bash gradlew test bootJar
 ```
 
-테스트는 Testcontainers로 만든 **독립 MySQL 컨테이너**만 사용한다. 프로세스 환경의 DB_URL을 테스트 연결로 사용하지 않는다. MigrationTests는 각 테스트마다 새 스키마를 만들며 기존 스키마를 삭제/초기화하지 않는다. 새 스키마 설치·재실행, 레거시 PK/내용 보존, explicit baseline, 불량 데이터 사전 중단, FK/UNIQUE/NOT NULL/CHECK, JPA schema validate, 회원가입/로그인 조회, 수락/권한/팀원/채팅/평가 흐름을 검증한다. tests가 0개이거나 Docker가 없어서 skip된 결과를 통과로 간주하지 않는다.
+테스트는 Testcontainers의 독립 MySQL을 사용하며 운영/개발 `DB_URL`에 연결하지 않는다. 마이그레이션 테스트는 각 테스트마다 별도 스키마를 만들고 기존 DB를 초기화하지 않는다. 서비스·Repository 테스트와 실제 HTTP 흐름에서 이메일 인증·JWT/쿠키 회전·권한·프로필·검색·지원·채팅·평가 및 오류 응답을 검증한다. 이미지 테스트는 형식 위장·크기·픽셀 제한·경로 순회를 확인한다. 인증 HTTP 테스트의 메일은 테스트용 수신기가 캡처하므로 외부 SMTP로 실제 메일을 보내는 검증과 구분한다. Docker 부재로 skip되거나 0개 실행된 결과를 통과로 간주하지 않는다.
+
+현재 변경의 로컬 검증: `test bootJar` 성공, 테스트 67개·실패/오류/스킵 0. 원격 CI와 외부 SMTP 실전송 결과는 이 로컬 검증과 별개다.

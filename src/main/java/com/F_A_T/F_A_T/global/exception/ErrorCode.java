@@ -3,41 +3,71 @@ package com.F_A_T.F_A_T.global.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-
-    // 400 Bad Request
-    INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
-
-    // 401 Unauthorized
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
-    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
-
-    // 403 Forbidden
-    FORBIDDEN(HttpStatus.FORBIDDEN, "권한이 없습니다."),
-    NOT_PROJECT_PM(HttpStatus.FORBIDDEN, "프로젝트 PM만 이 작업을 수행할 수 있습니다."),
-
-    // 404 Not Found
-    PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 프로젝트입니다."),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 유저입니다."),
-    APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 지원 내역입니다."),
-
-    // 409 Conflict
-    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
-    DUPLICATE_APPLICATION(HttpStatus.CONFLICT, "이미 지원한 프로젝트입니다."),
-    INVALID_PROJECT_STATUS(HttpStatus.CONFLICT, "완료된 프로젝트만 피드백을 작성할 수 있습니다.");
-
+    ALREADY_APPLIED(HttpStatus.valueOf(409), "이미 지원했습니다."),
+    ALREADY_REVIEWED(HttpStatus.valueOf(409), "이미 처리한 지원입니다."),
+    APPLICATION_ALREADY_PROCESSED(HttpStatus.valueOf(409), "이미 승인/거절된 지원은 취소할 수 없습니다."),
+    APPLICATION_NOT_FOUND(HttpStatus.valueOf(404), "지원 내역을 찾을 수 없습니다."),
+    CANNOT_APPLY_OWN_PROJECT(HttpStatus.valueOf(403), "본인 프로젝트에 지원할 수 없습니다."),
+    CANNOT_CHAT_WITH_SELF(HttpStatus.valueOf(403), "본인과 채팅할 수 없습니다."),
+    CAPACITY_BELOW_MEMBER_COUNT(HttpStatus.valueOf(409), "현재 팀원 수보다 정원을 줄일 수 없습니다."),
+    CHAT_LIST_FAILED(HttpStatus.valueOf(500), "채팅방 목록 조회에 실패했습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.valueOf(404), "채팅방이 없습니다."),
+    DUPLICATE_APPLICATION(HttpStatus.valueOf(409), "이미 지원한 프로젝트입니다."),
+    DUPLICATE_EMAIL(HttpStatus.valueOf(409), "이미 가입된 이메일입니다."),
+    DUPLICATE_MESSAGE(HttpStatus.valueOf(409), "이미 처리된 메시지입니다."),
+    EMAIL_ALREADY_EXISTS(HttpStatus.valueOf(409), "이미 가입된 이메일입니다."),
+    EMAIL_NOT_VERIFIED(HttpStatus.valueOf(403), "이메일 인증이 완료되지 않았습니다."),
+    EMPTY_MESSAGE(HttpStatus.valueOf(400), "빈 메시지는 보낼 수 없습니다."),
+    FORBIDDEN(HttpStatus.valueOf(403), "권한이 없습니다."),
+    IMAGE_TOO_LARGE(HttpStatus.valueOf(413), "이미지 크기 제한을 초과했습니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.valueOf(500), "요청 처리 중 오류가 발생했습니다."),
+    INVALID_APPLICATION_DATA(HttpStatus.valueOf(400), "지원 분야 또는 사유가 올바르지 않습니다."),
+    INVALID_APPLICATION_STATUS(HttpStatus.valueOf(400), "지원 상태 필터가 올바르지 않습니다."),
+    INVALID_CAPACITY(HttpStatus.valueOf(422), "모집 인원은 1~12명이어야 합니다."),
+    INVALID_CREDENTIALS(HttpStatus.valueOf(401), "이메일 또는 비밀번호가 올바르지 않습니다."),
+    INVALID_DEADLINE(HttpStatus.valueOf(422), "마감일은 오늘 이후여야 합니다."),
+    INVALID_EMAIL_DOMAIN(HttpStatus.valueOf(400), "@dsm.hs.kr 학교 이메일이 아닙니다."),
+    INVALID_FEEDBACK_DATA(HttpStatus.valueOf(400), "별점은 1~5의 정수여야 합니다."),
+    INVALID_FILTER(HttpStatus.valueOf(400), "검색 필터 형식이 올바르지 않습니다."),
+    INVALID_IMAGE_TYPE(HttpStatus.valueOf(400), "지원하지 않는 이미지 형식입니다."),
+    INVALID_INPUT(HttpStatus.valueOf(400), "입력값이 올바르지 않습니다."),
+    INVALID_MESSAGE_CURSOR(HttpStatus.valueOf(400), "페이지 커서가 유효하지 않습니다."),
+    INVALID_PAGINATION(HttpStatus.valueOf(400), "페이지 요청이 잘못되었습니다."),
+    INVALID_PASSWORD(HttpStatus.valueOf(401), "비밀번호가 일치하지 않습니다."),
+    INVALID_PROFILE_DATA(HttpStatus.valueOf(400), "프로필 입력값이 올바르지 않습니다."),
+    INVALID_PROJECT_DATA(HttpStatus.valueOf(400), "제목 또는 필수 입력값이 누락되었습니다."),
+    INVALID_PROJECT_ID(HttpStatus.valueOf(400), "프로젝트 ID가 올바르지 않습니다."),
+    INVALID_PROJECT_STATUS(HttpStatus.valueOf(409), "완료된 프로젝트만 평가할 수 있습니다."),
+    INVALID_REQUEST(HttpStatus.valueOf(400), "이메일 또는 비밀번호가 누락되었습니다."),
+    INVALID_SESSION(HttpStatus.valueOf(401), "세션이 만료되었거나 유효하지 않습니다."),
+    INVALID_SIGNUP_DATA(HttpStatus.valueOf(400), "필수 항목 또는 형식이 잘못되었습니다."),
+    INVALID_SIGNUP_TOKEN(HttpStatus.valueOf(401), "이메일 인증 정보가 유효하지 않습니다."),
+    INVALID_SIZE(HttpStatus.valueOf(400), "요청 건수가 올바르지 않습니다."),
+    INVALID_STAGE(HttpStatus.valueOf(400), "지원하지 않는 진행 단계입니다."),
+    INVALID_STAGE_TRANSITION(HttpStatus.valueOf(409), "허용되지 않은 단계 변경입니다."),
+    INVALID_USER_ID(HttpStatus.valueOf(400), "사용자 ID가 올바르지 않습니다."),
+    INVALID_VERIFICATION_CODE(HttpStatus.valueOf(400), "인증 코드가 올바르지 않습니다."),
+    MAIL_DELIVERY_FAILED(HttpStatus.valueOf(503), "인증 메일을 전송할 수 없습니다."),
+    NICKNAME_ALREADY_EXISTS(HttpStatus.valueOf(409), "이미 사용 중인 닉네임입니다."),
+    NOT_APPLICATION_OWNER(HttpStatus.valueOf(403), "본인 지원만 취소할 수 있습니다."),
+    NOT_PROJECT_PM(HttpStatus.valueOf(403), "프로젝트 PM만 이 작업을 수행할 수 있습니다."),
+    NOT_ROOM_PARTICIPANT(HttpStatus.valueOf(403), "채팅방에 참여하고 있지 않습니다."),
+    PROJECT_FULL(HttpStatus.valueOf(409), "모집 인원이 모두 찼습니다."),
+    PROJECT_NOT_COMPLETED(HttpStatus.valueOf(422), "완료된 프로젝트만 평가할 수 있습니다."),
+    PROJECT_NOT_FOUND(HttpStatus.valueOf(404), "프로젝트가 없습니다."),
+    RECOMMENDATION_UNAVAILABLE(HttpStatus.valueOf(503), "추천 목록을 불러올 수 없습니다."),
+    RECRUITMENT_CLOSED(HttpStatus.valueOf(422), "현재 모집하지 않는 프로젝트입니다."),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.valueOf(401), "갱신 토큰이 만료되었습니다."),
+    REFRESH_TOKEN_MISSING(HttpStatus.valueOf(401), "갱신 토큰이 없습니다."),
+    REFRESH_TOKEN_REVOKED(HttpStatus.valueOf(401), "로그아웃된 세션입니다."),
+    TOO_MANY_ATTEMPTS(HttpStatus.valueOf(429), "인증 시도 횟수를 초과했습니다."),
+    TOO_MANY_REQUESTS(HttpStatus.valueOf(429), "발송 요청이 너무 많습니다."),
+    UNAUTHORIZED(HttpStatus.valueOf(401), "로그인이 필요합니다."),
+    USER_NOT_FOUND(HttpStatus.valueOf(404), "사용자가 없습니다."),
+    VERIFICATION_EXPIRED(HttpStatus.valueOf(410), "인증 코드가 만료되었습니다.");
     private final HttpStatus httpStatus;
     private final String message;
-
-    ErrorCode(HttpStatus httpStatus, String message) {
-        this.httpStatus = httpStatus;
-        this.message = message;
-    }
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
-    }
-
-    public String getMessage() {
-        return message;
-    }
+    ErrorCode(HttpStatus status, String message) { this.httpStatus = status; this.message = message; }
+    public HttpStatus getHttpStatus() { return httpStatus; }
+    public String getMessage() { return message; }
 }

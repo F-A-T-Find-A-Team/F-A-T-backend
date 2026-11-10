@@ -66,7 +66,7 @@ class MigrationTests {
     }
 
     @Test void emptySchemaMigratesAndIsRepeatable() throws Exception {
-        assertEquals(3, flyway(null).migrate().migrationsExecuted);
+        assertEquals(5, flyway(null).migrate().migrationsExecuted);
         assertEquals(0, flyway(null).migrate().migrationsExecuted);
         assertEquals(0, count("SELECT COUNT(*) FROM users"));
     }
@@ -132,7 +132,7 @@ class MigrationTests {
         var baseline = Flyway.configure().dataSource(url, MYSQL.getUsername(), MYSQL.getPassword())
                 .baselineVersion("1").cleanDisabled(true).load();
         baseline.baseline();
-        assertEquals(2, baseline.migrate().migrationsExecuted);
+        assertEquals(4, baseline.migrate().migrationsExecuted);
     }
 
     @Test void mysqlEnforcesMembershipUniquenessAndChecks() throws Exception {
@@ -155,7 +155,7 @@ class MigrationTests {
         assertThrows(SQLException.class, () -> sql("INSERT INTO chat_rooms (project_id,room_type) VALUES (100,'DIRECT')"));
         sql("INSERT INTO chat_rooms (chat_room_id,project_id,room_type,requester_id) VALUES (301,100,'DIRECT',30)");
         sql("INSERT INTO chat_participants (chat_room_id,user_id) VALUES (301,30)");
-        sql("INSERT INTO chat_messages VALUES (401,301,30,'direct',NOW())");
+        sql("INSERT INTO chat_messages (chat_message_id,chat_room_id,sender_id,message_content,sent_at) VALUES (401,301,30,'direct',NOW())");
         assertThrows(SQLException.class, () -> sql("UPDATE chat_participants SET last_read_message_id=401 WHERE chat_room_id=300 AND user_id=20"));
     }
 }

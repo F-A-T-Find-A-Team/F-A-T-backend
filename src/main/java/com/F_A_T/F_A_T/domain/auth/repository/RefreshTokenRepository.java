@@ -7,6 +7,13 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from RefreshToken t where t.id = :id")
+    Optional<RefreshToken> findSessionForUpdate(@Param("id") Long id);
+
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from RefreshToken t where t.tokenHash = :hash")
+    Optional<RefreshToken> findForUpdateByTokenHash(@Param("hash") String hash);
     @Query("select t from RefreshToken t where t.tokenHash = :hash and t.revokedAt is null and t.expiresAt > :now")
     Optional<RefreshToken> findActive(@Param("hash") String hash, @Param("now") LocalDateTime now);
 

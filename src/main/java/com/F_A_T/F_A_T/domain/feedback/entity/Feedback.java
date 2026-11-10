@@ -36,8 +36,12 @@ public class Feedback {
     @Column(name = "feedback_content", columnDefinition = "TEXT")
     private String feedback_content;
 
+    @Column(name = "created_at", nullable = false)
+    private java.time.Instant createdAt;
+
     @Builder
     public Feedback(Project project, User writer, User target, String feedback_content, Integer rating) {
+        this.createdAt = java.time.Instant.now();
         this.project = project;
         this.writer = writer;
         this.target = target;

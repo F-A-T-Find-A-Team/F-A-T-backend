@@ -26,4 +26,15 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
 
     @Query("select a from ProjectApplication a where a.applicant.user_id = :userId order by a.application_id desc")
     List<ProjectApplication> findByApplicantId(@Param("userId") Long userId);
+
+    @Query("select a from ProjectApplication a where a.project.project_id = :projectId and a.applicant.user_id = :applicantId")
+    java.util.Optional<ProjectApplication> findByProjectAndApplicantId(@Param("projectId") Long projectId, @Param("applicantId") Long applicantId);
+
+    @Query("select a from ProjectApplication a where a.project.project_id = :projectId and a.application_status <> com.F_A_T.F_A_T.domain.application.entity.ApplicationStatus.CANCELLED and (:status is null or a.application_status = :status)")
+    org.springframework.data.domain.Page<ProjectApplication> findProjectApplications(@Param("projectId") Long projectId,
+            @Param("status") ApplicationStatus status, org.springframework.data.domain.Pageable pageable);
+
+    @Query("select a from ProjectApplication a where a.applicant.user_id = :userId and a.application_status <> com.F_A_T.F_A_T.domain.application.entity.ApplicationStatus.CANCELLED")
+    org.springframework.data.domain.Page<ProjectApplication> findMyApplications(@Param("userId") Long userId,
+            org.springframework.data.domain.Pageable pageable);
 }

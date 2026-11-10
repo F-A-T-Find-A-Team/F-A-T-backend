@@ -1,6 +1,7 @@
 package com.F_A_T.F_A_T.domain.auth.entity;
 
 import jakarta.persistence.*;
+import com.F_A_T.F_A_T.global.exception.*;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,8 @@ public class EmailVerification {
     private Long id;
     @Column(nullable = false)
     private String email;
+    @Column(nullable = false, length = 32)
+    private String purpose = "SIGNUP";
     @Column(name = "code_hash", nullable = false, columnDefinition = "CHAR(64)")
     private String codeHash;
     @Column(name = "code_expires_at", nullable = false)
@@ -36,16 +39,18 @@ public class EmailVerification {
         this.codeExpiresAt = codeExpiresAt;
     }
 
+    public EmailVerification(String email,String codeHash,LocalDateTime expiry,String purpose) { this(email,codeHash,expiry);this.purpose=purpose; }
+
     // Caller must compare a keyed digest and hold the repository's row lock.
     // These are persistence operations, not an email authentication endpoint.
     public void recordFailedAttempt() {
-        if (attempts >= 5) throw new IllegalStateException("인증 시도 횟수를 초과했습니다.");
+        if (attempts >= 5) throw new ApiException(ErrorCode.TOO_MANY_ATTEMPTS);
         attempts++;
     }
 
     public void markVerified(String signupTokenHash, LocalDateTime expiresAt, LocalDateTime now) {
         if (!codeExpiresAt.isAfter(now) || attempts >= 5 || verifiedAt != null) {
-            throw new IllegalStateException("사용할 수 없는 인증 요청입니다.");
+            throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE);
         }
         this.verifiedAt = now;
         this.signupTokenHash = signupTokenHash;

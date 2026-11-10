@@ -1,16 +1,12 @@
 package com.F_A_T.F_A_T.domain.chat.controller;
 
-import com.F_A_T.F_A_T.domain.chat.dto.request.ChatMessageCreateRequest;
-import com.F_A_T.F_A_T.domain.chat.dto.request.DirectChatCreateRequest;
-import com.F_A_T.F_A_T.domain.chat.dto.response.ChatMessageResponse;
-import com.F_A_T.F_A_T.domain.chat.dto.response.ChatRoomResponse;
+import com.F_A_T.F_A_T.domain.chat.dto.request.*;
+import com.F_A_T.F_A_T.domain.chat.dto.response.ChatApiResponse;
 import com.F_A_T.F_A_T.domain.chat.service.ChatService;
-import com.F_A_T.F_A_T.domain.user.security.CustomUserDetails;
-import jakarta.validation.Valid;
-import java.util.List;
+import com.F_A_T.F_A_T.global.dto.ApiResponse;
+import com.F_A_T.F_A_T.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,33 +14,28 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/chat-rooms")
 public class ChatController {
-
     private final ChatService chatService;
 
     @GetMapping
-    public ResponseEntity<List<ChatRoomResponse>> getMyChatRooms(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ResponseEntity.ok(chatService.getMyChatRooms(userDetails.getUser()));
+    public ApiResponse<ChatApiResponse.RoomList> rooms(@AuthenticationPrincipal CustomUserDetails actor) {
+        return ApiResponse.ok(chatService.listRooms(actor.getUser()));
     }
 
     @GetMapping("/{roomId}/messages")
-    public ResponseEntity<List<ChatMessageResponse>> getMessages(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable Long roomId) {
-        return ResponseEntity.ok(chatService.getMessages(userDetails.getUser(), roomId));
+    public ApiResponse<ChatApiResponse.MessagePage> messages(@AuthenticationPrincipal CustomUserDetails actor,
+            @PathVariable Long roomId, @RequestParam(required = false) String before, @RequestParam(defaultValue = "30") int size) {
+        return ApiResponse.ok(chatService.messagePage(actor.getUser(), roomId, before, size));
     }
 
     @PostMapping("/{roomId}/messages")
-    public ResponseEntity<Long> sendMessage(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long roomId,
-            @RequestBody @Valid ChatMessageCreateRequest request) {
-
-        Long messageId = chatService.sendMessage(userDetails.getUser(), roomId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageId);
+    public ResponseEntity<ApiResponse<ChatApiResponse.SentMessage>> send(@AuthenticationPrincipal CustomUserDetails actor,
+            @PathVariable Long roomId, @RequestBody ChatMessageCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(chatService.send(actor.getUser(), roomId, request)));
     }
 
     @PostMapping("/direct")
-    public ResponseEntity<Long> openDirect(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody @Valid DirectChatCreateRequest request) {
-        return ResponseEntity.ok(chatService.openDirect(userDetails.getUser(), request.projectId()));
+    public ApiResponse<ChatApiResponse.DirectRoom> direct(@AuthenticationPrincipal CustomUserDetails actor,
+            @RequestBody DirectChatCreateRequest request) {
+        return ApiResponse.ok(chatService.openDirectInfo(actor.getUser(), request.projectId()));
     }
 }

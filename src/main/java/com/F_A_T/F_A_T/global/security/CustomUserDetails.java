@@ -1,4 +1,4 @@
-package com.F_A_T.F_A_T.domain.user.security;
+package com.F_A_T.F_A_T.global.security;
 
 import com.F_A_T.F_A_T.domain.user.entity.User;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,10 +11,11 @@ import java.util.List;
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
+    private final Long sessionId;
 
-    public CustomUserDetails(User user) {
-        this.user = user;
-    }
+    public CustomUserDetails(User user) { this(user, null); }
+    public CustomUserDetails(User user, Long sessionId) { this.user=user; this.sessionId=sessionId; }
+    public Long getSessionId() { return sessionId; }
 
     public User getUser() {
         return user;

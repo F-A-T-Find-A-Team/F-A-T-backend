@@ -49,6 +49,23 @@ public class User {
     @Column(name = "avatar_url", length = 512)
     private String avatar_url;
 
+    @Column(name = "nickname", unique = true, length = 40)
+    private String nickname;
+
+    @Column(name = "real_name")
+    private String realName;
+
+    @Column(name = "student_id", length = 64)
+    private String studentId;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "user_majors", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "major", nullable = false)
+    private List<String> majors = new ArrayList<>();
+
     @Column(name = "user_bio", length = 100)
     private String user_bio;
 
@@ -66,5 +83,34 @@ public class User {
         this.interest_stacks = interest_stacks != null ? interest_stacks : new ArrayList<>();
         this.user_student_number = user_student_number;
         this.user_name = user_name;
+    }
+
+    /** Legacy rows retain their display name until an explicit nickname is chosen. */
+    public String getNickname() {
+        return nickname != null ? nickname : user_name;
+    }
+
+    public void setNickname(String nickname) {
+        if (nickname != null && realName == null) realName = user_name;
+        this.nickname = nickname;
+        if (nickname != null) this.user_name = nickname;
+    }
+
+    public String getRealName() {
+        return realName != null ? realName : user_name;
+    }
+
+    public String getStudentId() {
+        return studentId != null ? studentId : String.valueOf(user_student_number);
+    }
+
+    public List<String> getMajors() {
+        if (majors != null && !majors.isEmpty()) return majors;
+        return user_major == null ? List.of() : List.of(user_major);
+    }
+
+    public void setMajors(List<String> majors) {
+        this.majors = new ArrayList<>(majors);
+        if (!majors.isEmpty()) this.user_major = majors.get(0);
     }
 }

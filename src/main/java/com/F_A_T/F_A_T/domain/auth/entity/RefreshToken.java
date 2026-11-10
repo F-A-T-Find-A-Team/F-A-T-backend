@@ -26,6 +26,9 @@ public class RefreshToken {
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
+    public void rotate(String hash) { this.tokenHash=hash; }
+    public void revoke(LocalDateTime now) { this.revokedAt=now; }
+
     public RefreshToken(User user, String tokenHash, LocalDateTime createdAt, LocalDateTime expiresAt) {
         this.user = user;
         this.tokenHash = tokenHash;

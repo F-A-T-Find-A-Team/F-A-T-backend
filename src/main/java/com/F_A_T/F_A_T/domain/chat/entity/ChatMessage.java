@@ -32,11 +32,16 @@ public class ChatMessage {
     @Column(name = "sent_at", nullable = false)
     private LocalDateTime sent_at;
 
+    @Column(name = "client_message_id", length = 128)
+    private String clientMessageId;
+
+    public void setClientMessageId(String clientMessageId) { this.clientMessageId = clientMessageId; }
+
     @Builder
     public ChatMessage(ChatRoom chat_room, User sender, String message_content) {
         this.chat_room = chat_room;
         this.sender = sender;
         this.message_content = message_content;
-        this.sent_at = LocalDateTime.now();
+        this.sent_at = LocalDateTime.now(java.time.ZoneOffset.UTC);
     }
 }

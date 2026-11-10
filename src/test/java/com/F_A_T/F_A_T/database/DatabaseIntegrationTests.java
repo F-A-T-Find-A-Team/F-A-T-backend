@@ -80,7 +80,7 @@ class DatabaseIntegrationTests {
         var id = userService.signup(new SignupRequest("signup@test.invalid", "password123!", "X", "CS", List.of("Java"), 20260001, "tester"));
         assertTrue(users.existsByUserEmail("signup@test.invalid"));
         assertEquals(id, userService.login("signup@test.invalid", "password123!").getUser_id());
-        assertThrows(IllegalArgumentException.class, () -> userService.login("signup@test.invalid", "incorrect"));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> userService.login("signup@test.invalid", "incorrect"));
         assertTrue(users.findByUserEmail("missing@test.invalid").isEmpty());
     }
 
@@ -112,23 +112,23 @@ class DatabaseIntegrationTests {
         User pm=user("pm@test.invalid"), outsider=user("outsider@test.invalid");
         Long id=project(pm,3), roomId=rooms.findByProjectId(id).orElseThrow().getChat_room_id();
         assertTrue(chats.getMyChatRooms(outsider).isEmpty());
-        assertThrows(AccessDeniedException.class, () -> chats.getMessages(outsider,roomId));
-        assertThrows(AccessDeniedException.class, () -> chats.sendMessage(outsider,roomId,new ChatMessageCreateRequest("x")));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> chats.getMessages(outsider,roomId));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> chats.sendMessage(outsider,roomId,new ChatMessageCreateRequest("x")));
     }
 
     @Test void onlyPmCanDecideApplicationsAndProjectStatus() {
         User pm=user("pm@test.invalid"), outsider=user("outsider@test.invalid");
         Long id=project(pm,3), application=apply(outsider,id);
-        assertThrows(AccessDeniedException.class, () -> accept(outsider,application));
-        assertThrows(AccessDeniedException.class, () -> projects.updateStatus(outsider,id,new ProjectStatusUpdateRequest(ProjectStatus.COMPLETED)));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> accept(outsider,application));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> projects.updateStatus(outsider,id,new ProjectStatusUpdateRequest(ProjectStatus.COMPLETED)));
     }
 
     @Test void capacityIncludesPmAndAcceptedMembershipCannotBeSilentlyRevoked() {
         User pm=user("pm@test.invalid"), a=user("a@test.invalid"), b=user("b@test.invalid");
         Long id=project(pm,2), appA=apply(a,id), appB=apply(b,id);
         accept(pm,appA);
-        assertThrows(IllegalArgumentException.class, () -> accept(pm,appB));
-        assertThrows(IllegalArgumentException.class, () -> applications.updateStatus(pm,appA,new ApplicationStatusUpdateRequest(ApplicationStatus.REJECTED)));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> accept(pm,appB));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> applications.updateStatus(pm,appA,new ApplicationStatusUpdateRequest(ApplicationStatus.REJECTED)));
         assertEquals(2,members.countMembers(id));
     }
 
@@ -150,11 +150,11 @@ class DatabaseIntegrationTests {
         User pm=user("pm@test.invalid"), outsider=user("outsider@test.invalid");
         Long id=project(pm,3);
         var request=new FeedbackBulkCreateRequest(List.of(new FeedbackBulkCreateRequest.FeedbackItem(outsider.getUser_id(),5,"thanks")));
-        assertThrows(IllegalArgumentException.class, () -> feedback.createFeedbacks(pm,id,request));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> feedback.createFeedbacks(pm,id,request));
         projects.updateStatus(pm,id,new ProjectStatusUpdateRequest(ProjectStatus.COMPLETED));
-        assertThrows(IllegalArgumentException.class, () -> feedback.createFeedbacks(pm,id,request));
-        assertThrows(AccessDeniedException.class, () -> feedback.createFeedbacks(outsider,id,request));
-        assertThrows(IllegalArgumentException.class, () -> feedback.createFeedbacks(pm,id,new FeedbackBulkCreateRequest(List.of(new FeedbackBulkCreateRequest.FeedbackItem(pm.getUser_id(),5,"self")))));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> feedback.createFeedbacks(pm,id,request));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> feedback.createFeedbacks(outsider,id,request));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> feedback.createFeedbacks(pm,id,new FeedbackBulkCreateRequest(List.of(new FeedbackBulkCreateRequest.FeedbackItem(pm.getUser_id(),5,"self")))));
     }
 
     @Test void directRoomsAreIdempotentPrivateAndSeparateFromTeamRooms() {
@@ -166,8 +166,8 @@ class DatabaseIntegrationTests {
         assertTrue(participants.existsParticipant(direct,pm.getUser_id()));
         assertTrue(participants.existsParticipant(direct,requester.getUser_id()));
         assertFalse(participants.existsParticipant(teamRoom,requester.getUser_id()));
-        assertThrows(AccessDeniedException.class, () -> chats.getMessages(outsider,direct));
-        assertThrows(IllegalArgumentException.class, () -> chats.openDirect(pm,id));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> chats.getMessages(outsider,direct));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> chats.openDirect(pm,id));
         Long otherDirect=chats.openDirect(outsider,id);
         assertNotEquals(direct,otherDirect);
     }
@@ -190,19 +190,19 @@ class DatabaseIntegrationTests {
         assertEquals(third,participant.getLastReadMessage().getChat_message_id());
         Long direct=chats.openDirect(a,id);
         Long different=chats.sendMessage(pm,direct,new ChatMessageCreateRequest("different"));
-        assertThrows(IllegalArgumentException.class, () -> participant.markRead(messages.findById(different).orElseThrow()));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> participant.markRead(messages.findById(different).orElseThrow()));
     }
 
     @Test void pendingCancellationPreservesHistoryAndCannotBeAccepted() {
         User pm=user("pm@test.invalid"), a=user("a@test.invalid");
         Long id=project(pm,3), application=apply(a,id);
-        assertThrows(AccessDeniedException.class, () -> applications.cancel(pm,application));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> applications.cancel(pm,application));
         applications.cancel(a,application);
         em.flush();
         assertEquals(ApplicationStatus.CANCELLED,applicationRepository.findById(application).orElseThrow().getApplication_status());
         assertEquals(1,applicationRepository.findByApplicantId(a.getUser_id()).size());
         assertEquals(1,applicationRepository.findByProjectId(id).size());
-        assertThrows(IllegalArgumentException.class, () -> accept(pm,application));
+        assertThrows(com.F_A_T.F_A_T.global.exception.ApiException.class, () -> accept(pm,application));
         assertEquals(1,members.countMembers(id));
     }
 
@@ -252,7 +252,7 @@ class DatabaseIntegrationTests {
                     ready.countDown();
                     if (!start.await(15,java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("start timed out");
                     try { accept((User)setup[0],application); return true; }
-                    catch (IllegalArgumentException expected) { return false; }
+                    catch (com.F_A_T.F_A_T.global.exception.ApiException expected) { return false; }
                 }));
             }
             assertTrue(ready.await(15,java.util.concurrent.TimeUnit.SECONDS)); start.countDown();

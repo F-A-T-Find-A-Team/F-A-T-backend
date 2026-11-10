@@ -4,6 +4,7 @@ import com.F_A_T.F_A_T.domain.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
@@ -63,6 +64,23 @@ public class Project {
     @Column(name = "recruit_limit", nullable = false)
     private Integer recruit_limit;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
+    public void update(String title, String description, List<String> majors, List<String> stacks,
+                       LocalDate deadline, Integer capacity, Boolean recruitingOpen) {
+        if (title != null) this.project_title = title;
+        if (description != null) this.project_description = description;
+        if (majors != null) this.required_majors = new ArrayList<>(majors);
+        if (stacks != null) this.required_stacks = new ArrayList<>(stacks);
+        if (deadline != null) this.project_deadline = deadline;
+        if (capacity != null) this.recruit_limit = capacity;
+        if (recruitingOpen != null) this.recruiting_open = recruitingOpen;
+    }
+
     @Builder
     public Project(User pm, String project_title, String project_description,
                    List<String> required_majors, List<String> required_stacks,
@@ -84,6 +102,9 @@ public class Project {
 
     public void changeStatus(@NotNull ProjectStatus status) {
         this.project_status = java.util.Objects.requireNonNull(status);
-        if (status == ProjectStatus.COMPLETED) this.recruiting_open = false;
+        if (status == ProjectStatus.COMPLETED) {
+            this.recruiting_open = false;
+            if (completedAt == null) completedAt = Instant.now();
+        }
     }
 }
